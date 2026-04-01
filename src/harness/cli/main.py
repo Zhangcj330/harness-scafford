@@ -59,6 +59,8 @@ def review_task(run_id: str) -> None:
 @app.command("dashboard")
 def dashboard(host: str = "127.0.0.1", port: int = 8421) -> None:
     """Serve the lightweight local dashboard."""
+    typer.echo(f"Harness dashboard listening at http://{host}:{port}")
+    typer.echo("Press Ctrl+C to stop.")
     uvicorn.run(create_app(), host=host, port=port, log_level="warning")
 
 
