@@ -7,17 +7,23 @@ from fastapi.responses import HTMLResponse
 
 from harness.config import HarnessConfig
 from harness.memory.store import RunStore
+from harness.tasks.service import TaskService
 
 
 def create_app(config_path: Path | None = None) -> FastAPI:
     repo_root = config_path.resolve().parent if config_path else Path.cwd()
     config = HarnessConfig.load(path=config_path, repo_root=repo_root)
     store = RunStore(config)
+    tasks = TaskService(config)
     app = FastAPI(title="Harness Dashboard")
 
     @app.get("/api/runs")
     def list_runs() -> list[dict[str, object]]:
         return store.list_runs()
+
+    @app.get("/api/tasks")
+    def list_tasks() -> list[dict[str, object]]:
+        return tasks.list_tasks()
 
     @app.get("/api/runs/{run_id}")
     def get_run(run_id: str) -> dict[str, object]:
@@ -93,6 +99,20 @@ def create_app(config_path: Path | None = None) -> FastAPI:
     <main>
       <h1>Harness Dashboard</h1>
       <p>Recent runs, stored artifacts, and review status from the local run index.</p>
+      <h2>Tasks</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>State</th>
+            <th>Latest Run</th>
+            <th>Status</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody id="tasks"></tbody>
+      </table>
+      <h2>Runs</h2>
       <table>
         <thead>
           <tr>
@@ -107,11 +127,17 @@ def create_app(config_path: Path | None = None) -> FastAPI:
       </table>
     </main>
     <script>
-      async function loadRuns() {
-        const response = await fetch('/api/runs');
-        const runs = await response.json();
-        const tbody = document.getElementById('runs');
-        tbody.innerHTML = runs.map((run) => `
+      async function loadDashboard() {
+        const [runsResponse, tasksResponse] = await Promise.all([
+          fetch('/api/runs'),
+          fetch('/api/tasks'),
+        ]);
+        const [runs, tasks] = await Promise.all([
+          runsResponse.json(),
+          tasksResponse.json(),
+        ]);
+        const runsBody = document.getElementById('runs');
+        runsBody.innerHTML = runs.map((run) => `
           <tr>
             <td><a href="/api/runs/${run.run_id}" target="_blank">${run.run_id}</a></td>
             <td class="status">${run.status}</td>
@@ -120,9 +146,19 @@ def create_app(config_path: Path | None = None) -> FastAPI:
             <td>${run.task_file}</td>
           </tr>
         `).join('');
+        const tasksBody = document.getElementById('tasks');
+        tasksBody.innerHTML = tasks.map((task) => `
+          <tr>
+            <td>${task.task_id}</td>
+            <td class="status">${task.state}</td>
+            <td>${task.latest_run_id || ''}</td>
+            <td>${task.latest_run_status || ''}</td>
+            <td>${task.updated_at}</td>
+          </tr>
+        `).join('');
       }
-      loadRuns();
-      setInterval(loadRuns, 5000);
+      loadDashboard();
+      setInterval(loadDashboard, 5000);
     </script>
   </body>
 </html>

@@ -8,6 +8,9 @@ This directory is the source of truth for system behavior.
 - [operations.md](operations.md)
 - [observability.md](observability.md)
 - [prompts.md](prompts.md)
+- [codex.md](codex.md)
+- [memory.md](memory.md)
+- [structure.md](structure.md)
 
 ## Plans
 
