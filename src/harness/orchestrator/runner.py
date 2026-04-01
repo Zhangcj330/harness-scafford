@@ -14,6 +14,7 @@ from harness.observability.logging import JsonEventLogger
 from harness.observability.telemetry import Telemetry
 from harness.schemas.run import Handoff, RunManifest, RunResult
 from harness.schemas.task import TaskSpec, load_task
+from harness.tasks.service import TaskService
 from harness.tools.git import GitTool
 
 PHASES = ["planner", "implementer", "reviewer"]
@@ -25,6 +26,7 @@ class RunService:
         self.store = RunStore(config)
         self.logger = JsonEventLogger()
         self.git = GitTool()
+        self.tasks = TaskService(config)
         provider = OpenAIProvider(config.provider.model)
         self.planner = PlannerAgent(provider)
         self.implementer = ImplementerAgent(config)
@@ -68,6 +70,7 @@ class RunService:
         manifest.status = "reviewed"
         manifest.current_phase = "reviewer"
         manifest.timestamps["reviewed_at"] = datetime.now(UTC).isoformat()
+        manifest = self.tasks.sync_from_run(manifest, result, self.store.load_handoff(run_id))
         self.store.persist_manifest(manifest)
         return manifest
 
@@ -95,6 +98,11 @@ class RunService:
         self.store.persist_result(manifest.run_id, result)
         manifest.status = "completed"
         manifest.timestamps["completed_at"] = datetime.now(UTC).isoformat()
+        manifest = self.tasks.sync_from_run(
+            manifest,
+            result,
+            self.store.load_handoff(manifest.run_id),
+        )
         self.store.persist_manifest(manifest)
 
     def _run_planner(
@@ -217,6 +225,12 @@ class RunService:
         self.store.persist_handoff(manifest.run_id, handoff)
         self.store.persist_result(manifest.run_id, result)
         self.store.persist_manifest(manifest)
+        manifest = self.tasks.sync_from_run(
+            manifest,
+            result,
+            self.store.load_handoff(manifest.run_id),
+        )
+        self.store.persist_manifest(manifest)
         self._emit("checkpoint", manifest, state=state)
 
     def _pause(self, manifest: RunManifest, result: RunResult, reason: str) -> None:
@@ -231,6 +245,12 @@ class RunService:
         self.store.persist_result(manifest.run_id, result)
         manifest.status = "paused"
         manifest.timestamps["paused_at"] = datetime.now(UTC).isoformat()
+        self.store.persist_manifest(manifest)
+        manifest = self.tasks.sync_from_run(
+            manifest,
+            result,
+            self.store.load_handoff(manifest.run_id),
+        )
         self.store.persist_manifest(manifest)
         self._emit("paused", manifest, reason=reason)
 

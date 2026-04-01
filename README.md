@@ -34,6 +34,11 @@ If Docker is not installed, the harness still runs locally and writes JSON artif
 - `uv run harness run <task-file>`
 - `uv run harness resume <run-id>`
 - `uv run harness review <run-id>`
+- `uv run harness codex bootstrap --check`
+- `uv run harness codex bootstrap --apply`
+- `uv run harness task preview --goal "<text>"`
+- `uv run harness task start <task-id>`
+- `uv run harness task suggest-memory <task-id>`
 - `uv run harness dashboard`
 - `uv run harness obs up`
 - `uv run harness obs down`
@@ -45,6 +50,8 @@ If Docker is not installed, the harness still runs locally and writes JSON artif
 - [docs/architecture.md](docs/architecture.md)
 - [docs/operations.md](docs/operations.md)
 - [docs/observability.md](docs/observability.md)
+- [docs/codex.md](docs/codex.md)
+- [docs/memory.md](docs/memory.md)
 
 ## Notes
 
