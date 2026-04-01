@@ -19,3 +19,16 @@ __pycache__/
 
 # Logs
 *.log
+
+# Harness artifacts
+.runs/*
+.worktrees/*
+!.runs/.gitkeep
+!.worktrees/.gitkeep
+
+# Local state
+.pytest_cache/
+.ruff_cache/
+.pyright/
+.coverage
+htmlcov/
