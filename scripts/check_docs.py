@@ -11,6 +11,10 @@ REQUIRED_STRINGS = [
     "docs/index.md",
     "docs/architecture.md",
     "docs/operations.md",
+    "docs/codex.md",
+    "docs/memory.md",
+    "docs/structure.md",
+    "memory/project.md",
 ]
 
 
@@ -20,7 +24,13 @@ def main() -> int:
     if missing:
         raise SystemExit(f"AGENTS.md is missing required references: {missing}")
 
-    markdown_files = [AGENTS, *ROOT.glob("docs/**/*.md"), ROOT / "README.md"]
+    markdown_files = [
+        AGENTS,
+        *ROOT.glob("docs/**/*.md"),
+        *ROOT.glob("memory/**/*.md"),
+        ROOT / "README.md",
+        ROOT / "README.zh-CN.md",
+    ]
     internal_targets: list[Path] = []
     for path in markdown_files:
         text = path.read_text()

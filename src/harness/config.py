@@ -42,6 +42,8 @@ class PathsConfig(BaseModel):
     runs_dir: Path = Path(".runs")
     worktrees_dir: Path = Path(".worktrees")
     db_path: Path = Path(".runs/index.db")
+    tasks_dir: Path = Path("tasks")
+    memory_dir: Path = Path("memory")
 
 
 class RuntimeConfig(BaseModel):
@@ -68,6 +70,14 @@ class HarnessConfig(BaseModel):
     @property
     def db_path(self) -> Path:
         return self._resolve(self.paths.db_path)
+
+    @property
+    def tasks_dir(self) -> Path:
+        return self._resolve(self.paths.tasks_dir)
+
+    @property
+    def memory_dir(self) -> Path:
+        return self._resolve(self.paths.memory_dir)
 
     def _resolve(self, path: Path) -> Path:
         return path if path.is_absolute() else self.repo_root / path

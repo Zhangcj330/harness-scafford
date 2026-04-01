@@ -13,6 +13,8 @@
 
 - `src/harness/`: runtime code for the CLI, orchestrator, tools, dashboard, storage, and observability
 - `docs/`: source-of-truth documentation for system behavior and runbooks
+- `memory/`: repo-tracked long-term memory shared by Codex CLI and VS Code Codex Chat
+- `tasks/`: draft, active, and archived task registry for Codex-visible workflow state
 - `.runs/`: per-run artifacts, logs, manifests, and review outputs
 - `.worktrees/`: isolated task workspaces
 - `ops/observability/`: local Grafana/Loki/Tempo/Prometheus/Alloy stack
@@ -25,12 +27,24 @@
 - Update `docs/` when behavior changes
 - Keep `AGENTS.md` concise and point to `docs/` for detail
 - Preserve planner, implementer, and reviewer separation
+- For Codex Chat workflows, preview tasks before writing tracked task files
+- Read repo memory before starting work and keep task memory current as runs evolve
 
 ## Required Docs
 
 - [docs/index.md](docs/index.md)
 - [docs/architecture.md](docs/architecture.md)
 - [docs/operations.md](docs/operations.md)
+- [docs/codex.md](docs/codex.md)
+- [docs/memory.md](docs/memory.md)
+- [docs/structure.md](docs/structure.md)
+
+## Codex Must-Read Files
+
+- [memory/project.md](memory/project.md)
+- [memory/decisions.md](memory/decisions.md)
+- [memory/current-focus.md](memory/current-focus.md)
+- [memory/active-tasks.md](memory/active-tasks.md)
 
 ## Testing And Recovery Rules
 
@@ -38,3 +52,6 @@
 - If a run pauses, resume with `uv run harness resume <run-id>`
 - If review needs to be re-generated, use `uv run harness review <run-id>`
 - Treat `.runs/` as audit history; do not mutate old run artifacts in place unless the command is explicitly for review regeneration
+- Check Codex project trust with `uv run harness codex bootstrap --check`
+- Preview tracked tasks with `uv run harness task preview --goal "..."`
+- Start tracked tasks with `uv run harness task start <task-id>`

@@ -16,6 +16,8 @@ Each run writes artifacts into `.runs/<run_id>/` and works inside `.worktrees/<r
 - `src/harness/agents/`: provider adapter plus planner/implementer/reviewer roles
 - `src/harness/tools/`: shell, fs, git, tests, web fetch, web search, browser
 - `src/harness/memory/store.py`: per-run artifacts and SQLite run index
+- `src/harness/tasks/`: tracked task lifecycle and repo memory integration
+- `src/harness/codex/bootstrap.py`: local Codex project bootstrap
 - `src/harness/dashboard/app.py`: local read-only dashboard
 - `src/harness/observability/`: JSON logs, Prometheus metrics, OTLP traces
 
@@ -25,6 +27,8 @@ Each run writes artifacts into `.runs/<run_id>/` and works inside `.worktrees/<r
 - `handoff.md` stores resumable context after every checkpoint
 - `events.jsonl` stores structured event history
 - `result.json` stores planner, implementer, reviewer, and telemetry summaries
+- `tasks/` stores previewed, active, and archived tasks
+- `memory/` stores repo-tracked long-term memory and the active task index
 
 ## Workspace isolation
 
