@@ -1,0 +1,35 @@
+[provider]
+name = "openai"
+model = "gpt-5.1"
+timeout_seconds = 120
+
+[budgets]
+max_steps = 6
+max_tool_calls = 12
+max_runtime_seconds = 900
+
+[tool_policy]
+allow_shell = true
+allow_fs = true
+allow_git = true
+allow_tests = true
+allow_web_fetch = true
+allow_web_search = true
+allow_browser = true
+
+[observability]
+service_name = "harness-scaffold"
+otlp_endpoint = "http://localhost:4318/v1/traces"
+prometheus_port = 9108
+grafana_base_url = "http://localhost:3000"
+loki_base_url = "http://localhost:3100"
+tempo_base_url = "http://localhost:3200"
+prometheus_base_url = "http://localhost:9090"
+
+[paths]
+runs_dir = ".runs"
+worktrees_dir = ".worktrees"
+db_path = ".runs/index.db"
+
+[runtime]
+checkpoint_every_steps = 1

@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "harness-scaffold"
+version = "0.1.0"
+description = "Python-first scaffold for long-running coding-agent harnesses."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "beautifulsoup4>=4.13.4",
+  "fastapi>=0.116.1",
+  "httpx>=0.28.1",
+  "openai>=2.0.0",
+  "opentelemetry-api>=1.37.0",
+  "opentelemetry-exporter-otlp-proto-http>=1.37.0",
+  "opentelemetry-sdk>=1.37.0",
+  "playwright>=1.55.0",
+  "prometheus-client>=0.23.1",
+  "pydantic>=2.11.7",
+  "python-json-logger>=3.3.0",
+  "pyyaml>=6.0.3",
+  "readability-lxml>=0.8.4.1",
+  "typer>=0.19.2",
+  "uvicorn[standard]>=0.35.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pre-commit>=4.3.0",
+  "pyright>=1.1.404",
+  "pytest>=8.4.2",
+  "pytest-cov>=7.0.0",
+  "pytest-xdist>=3.8.0",
+  "ruff>=0.13.1",
+]
+
+[project.scripts]
+harness = "harness.cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/harness"]
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pyright]
+include = ["src", "tests", "scripts"]
+pythonVersion = "3.12"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+markers = [
+  "live: tests that require external services, browsers, or API keys",
+]
+testpaths = ["tests"]

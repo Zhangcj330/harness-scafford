@@ -1,0 +1,14 @@
+goal: Validate the local harness scaffold end-to-end without live model access.
+acceptance_criteria:
+  - A run workspace is created.
+  - Planner, implementer, and reviewer artifacts are written.
+  - At least one web fetch and one test command execute.
+constraints:
+  - Prefer offline-safe behavior.
+inputs:
+  task_id: offline-smoke
+  urls:
+    - https://example.com
+  browser_urls:
+    - https://example.com
+  test_command: python -c "print('offline smoke')"
