@@ -5,7 +5,7 @@
 - Run a task: `uv run harness run examples/tasks/offline-smoke.yaml`
 - Resume a paused run: `uv run harness resume <run-id>`
 - Re-run review: `uv run harness review <run-id>`
-- Start dashboard: `uv run harness dashboard`
+- Start dashboard: `uv run harness dashboard` then open `http://127.0.0.1:8421`
 - Start observability stack: `uv run harness obs up`
 - Stop observability stack: `uv run harness obs down`
 
