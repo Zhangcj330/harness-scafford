@@ -2,6 +2,8 @@
 
 Python-first scaffold for long-running coding-agent workflows.
 
+中文版本: [README.zh-CN.md](README.zh-CN.md)
+
 The repository is structured around a few non-negotiable constraints:
 
 - runs are durable and resumable
