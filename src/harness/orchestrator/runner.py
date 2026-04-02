@@ -152,6 +152,7 @@ class RunService:
                 task,
                 run_dir=run_dir,
                 worktree_path=worktree_path,
+                plan_summary=result.plan_summary,
             )
             for item in tool_results:
                 telemetry.record_tool_call("implementer")

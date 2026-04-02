@@ -9,6 +9,7 @@ from harness.config import HarnessConfig
 from harness.dashboard.app import create_app
 from harness.orchestrator.runner import RunService
 from harness.tasks.service import TaskService
+from harness.tools.base import ToolResult
 
 
 def _git(command: list[str], cwd: Path) -> None:
@@ -49,6 +50,15 @@ def test_task_preview_start_and_memory_suggestion_flow(tmp_path, monkeypatch) ->
         return "# Reviewer Output\n\nVerdict: pass\n"
 
     monkeypatch.setattr("harness.agents.provider.OpenAIProvider.complete", fake_complete)
+    monkeypatch.setattr(
+        "harness.tools.codex_exec.CodexExecTool.run",
+        lambda self, *, prompt, cwd, artifact_dir: ToolResult(
+            tool="code_exec",
+            ok=True,
+            summary="Codex exec completed; changed 1 files",
+            data={"changed_files": ["src/example.py"], "last_message": "done"},
+        ),
+    )
 
     config = HarnessConfig.load(path=repo / "harness.toml", repo_root=repo)
     tasks = TaskService(config)
@@ -97,6 +107,15 @@ def test_dashboard_api_lists_tasks(tmp_path, monkeypatch) -> None:
 """.strip()
 
     monkeypatch.setattr("harness.agents.provider.OpenAIProvider.complete", fake_complete)
+    monkeypatch.setattr(
+        "harness.tools.codex_exec.CodexExecTool.run",
+        lambda self, *, prompt, cwd, artifact_dir: ToolResult(
+            tool="code_exec",
+            ok=True,
+            summary="Codex exec completed; changed 1 files",
+            data={"changed_files": ["src/example.py"], "last_message": "done"},
+        ),
+    )
 
     config = HarnessConfig.load(path=repo / "harness.toml", repo_root=repo)
     tasks = TaskService(config)

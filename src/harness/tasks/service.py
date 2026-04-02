@@ -83,7 +83,7 @@ class TaskService:
             "goal": final_goal,
             "acceptance_criteria": criteria,
             "constraints": final_constraints,
-            "inputs": {"task_id": normalized_task_id},
+            "inputs": {"task_id": normalized_task_id, "code_exec": True},
         }
         task_file = task_dir / "task.yaml"
         task_file.write_text(yaml.safe_dump(task_payload, sort_keys=False, allow_unicode=True))

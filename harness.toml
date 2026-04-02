@@ -16,6 +16,7 @@ allow_tests = true
 allow_web_fetch = true
 allow_web_search = true
 allow_browser = true
+allow_code_exec = true
 
 [observability]
 service_name = "harness-scaffold"

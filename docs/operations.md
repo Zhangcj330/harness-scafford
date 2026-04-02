@@ -32,7 +32,9 @@ When a run pauses because of a step budget or interruption:
 ## Failure recovery
 
 - Missing Docker: local run still works, but Grafana links are informational only
-- Missing `OPENAI_API_KEY`: planner/reviewer fall back to deterministic local output
+- Missing `OPENAI_API_KEY`: planner/reviewer fall back to `codex exec` if Codex CLI is installed and signed in
 - Missing Brave API key: `web_search` degrades to an empty but successful result
+- Missing Codex CLI: model-backed preview and code execution fail unless OpenAI API access is available for the provider path in use
 - Missing Playwright browser binaries: browser capture returns a failed tool result and review should flag it
+- Broken system trust store: `web_fetch` uses the `certifi` CA bundle for HTTPS fetches
 - Missing `~/.codex/config.toml`: Codex bootstrap must fail closed instead of inventing a config

@@ -26,6 +26,7 @@ class ToolPolicyConfig(BaseModel):
     allow_web_fetch: bool = True
     allow_web_search: bool = True
     allow_browser: bool = True
+    allow_code_exec: bool = True
 
 
 class ObservabilityConfig(BaseModel):
