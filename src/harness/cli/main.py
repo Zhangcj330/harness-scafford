@@ -8,6 +8,7 @@ from typing import Annotated
 import typer
 import uvicorn
 
+from harness.agents.provider import ProviderUnavailableError
 from harness.codex.bootstrap import CodexBootstrapService
 from harness.config import HarnessConfig
 from harness.dashboard.app import create_app
@@ -38,21 +39,33 @@ def _tasks(config_path: Path | None = None) -> TaskService:
 @app.command("run")
 def run_task(task_file: Path) -> None:
     """Run a task file through planner, implementer, and reviewer phases."""
-    manifest = _service().run(task_file)
+    try:
+        manifest = _service().run(task_file)
+    except ProviderUnavailableError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
     typer.echo(manifest.run_id)
 
 
 @app.command("resume")
 def resume_task(run_id: str) -> None:
     """Resume a paused run."""
-    manifest = _service().resume(run_id)
+    try:
+        manifest = _service().resume(run_id)
+    except ProviderUnavailableError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
     typer.echo(f"{manifest.run_id} {manifest.status}")
 
 
 @app.command("review")
 def review_task(run_id: str) -> None:
     """Re-run only the independent review phase."""
-    manifest = _service().review(run_id)
+    try:
+        manifest = _service().review(run_id)
+    except ProviderUnavailableError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
     typer.echo(f"{manifest.run_id} {manifest.status}")
 
 
@@ -121,14 +134,18 @@ def preview_task(
     brief_text = brief_file.read_text() if brief_file else None
     if goal is None and brief_text is not None:
         goal = _goal_from_brief(brief_text)
-    preview = _tasks().preview_task(
-        goal=goal or "task",
-        acceptance_criteria=acceptance or None,
-        constraints=constraint or None,
-        brief_text=brief_text,
-        source=source,
-        task_id=task_id,
-    )
+    try:
+        preview = _tasks().preview_task(
+            goal=goal or "task",
+            acceptance_criteria=acceptance or None,
+            constraints=constraint or None,
+            brief_text=brief_text,
+            source=source,
+            task_id=task_id,
+        )
+    except ProviderUnavailableError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
     typer.echo(preview.task_id)
     typer.echo(preview.task_dir)
 

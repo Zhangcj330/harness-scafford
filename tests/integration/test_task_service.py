@@ -31,6 +31,25 @@ def test_task_preview_start_and_memory_suggestion_flow(tmp_path, monkeypatch) ->
     _init_repo(repo)
     monkeypatch.chdir(repo)
 
+    def fake_complete(self, system_prompt: str, user_prompt: str) -> str:
+        if "task preview agent" in system_prompt:
+            return """
+{
+  "task_id": "codex-task-flow",
+  "goal": "Document Codex task flow",
+  "acceptance_criteria": ["Task is previewed", "Task can be started"],
+  "constraints": [],
+  "brief_markdown": "# Task Brief\\n\\n## Goal\\n\\nDocument Codex task flow\\n",
+  "open_threads": ["Task is previewed", "Task can be started"],
+  "next_steps": ["Review the draft.", "Start the task when ready."]
+}
+""".strip()
+        if "planning agent" in system_prompt:
+            return "# Planner Output\n\n- ready\n"
+        return "# Reviewer Output\n\nVerdict: pass\n"
+
+    monkeypatch.setattr("harness.agents.provider.OpenAIProvider.complete", fake_complete)
+
     config = HarnessConfig.load(path=repo / "harness.toml", repo_root=repo)
     tasks = TaskService(config)
     preview = tasks.preview_task(
@@ -59,10 +78,25 @@ def test_task_preview_start_and_memory_suggestion_flow(tmp_path, monkeypatch) ->
     assert "Memory Suggestions" in suggestion_path.read_text()
 
 
-def test_dashboard_api_lists_tasks(tmp_path) -> None:
+def test_dashboard_api_lists_tasks(tmp_path, monkeypatch) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
     _init_repo(repo)
+
+    def fake_complete(self, system_prompt: str, user_prompt: str) -> str:
+        return """
+{
+  "task_id": "dashboard-task",
+  "goal": "Preview task in dashboard",
+  "acceptance_criteria": ["Task draft exists"],
+  "constraints": [],
+  "brief_markdown": "# Task Brief\\n\\n## Goal\\n\\nPreview task in dashboard\\n",
+  "open_threads": ["Task draft exists"],
+  "next_steps": ["Review the draft.", "Start the task when ready."]
+}
+""".strip()
+
+    monkeypatch.setattr("harness.agents.provider.OpenAIProvider.complete", fake_complete)
 
     config = HarnessConfig.load(path=repo / "harness.toml", repo_root=repo)
     tasks = TaskService(config)

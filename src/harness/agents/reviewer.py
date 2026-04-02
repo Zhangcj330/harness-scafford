@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from harness.agents.provider import OpenAIProvider, ProviderUnavailableError
+from harness.agents.provider import OpenAIProvider
 from harness.schemas.run import RunManifest, RunResult
 from harness.schemas.task import TaskSpec
 
@@ -31,38 +31,18 @@ class ReviewerAgent:
         self.provider = provider
 
     def review(self, task: TaskSpec, packet: dict[str, Any]) -> tuple[str, bool]:
-        fallback = self._fallback_review(task, packet)
-        try:
-            text = self.provider.complete(
-                system_prompt=(
-                    "You are the reviewer agent in a coding harness. "
-                    "Review the execution evidence, note risks, and decide pass/fail."
-                ),
-                user_prompt=str(packet),
-            )
-            passed = "fail" not in text.lower()
-            return text, passed
-        except ProviderUnavailableError:
-            return fallback
-
-    def _fallback_review(self, task: TaskSpec, packet: dict[str, Any]) -> tuple[str, bool]:
-        tool_results = packet.get("tool_results", [])
-        failures = [item for item in tool_results if not item.get("ok", False)]
-        missing = []
-        if not packet.get("implementation_summary"):
-            missing.append("implementation summary")
-        body = [
-            "# Reviewer Output",
-            "",
-            f"- Goal: {task.goal}",
-            f"- Acceptance criteria count: {len(task.acceptance_criteria)}",
-            f"- Tool failures: {len(failures)}",
-            f"- Missing signals: {', '.join(missing) if missing else 'none'}",
-        ]
-        if failures:
-            body.append("- Verdict: fail")
-            for item in failures:
-                body.append(f"- Failure: {item.get('tool')}: {item.get('summary')}")
-            return "\n".join(body) + "\n", False
-        body.append("- Verdict: pass")
-        return "\n".join(body) + "\n", True
+        text = self.provider.complete(
+            system_prompt=(
+                "You are the reviewer agent in a coding harness. "
+                "Review the execution evidence, note risks, and decide pass/fail."
+            ),
+            user_prompt=(
+                f"Goal: {task.goal}\n"
+                f"Acceptance criteria: {task.acceptance_criteria}\n"
+                f"Execution packet: {packet}\n"
+                "You must state an explicit verdict line containing either 'Verdict: pass' "
+                "or 'Verdict: fail'."
+            ),
+        )
+        passed = "verdict: fail" not in text.lower()
+        return text, passed
