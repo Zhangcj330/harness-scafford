@@ -5,7 +5,7 @@
 The harness executes runs in three fixed roles:
 
 1. `planner`: expands the task into an execution plan
-2. `implementer`: runs web, browser, shell, test, and workspace actions
+2. `implementer`: runs web, browser, Codex CLI code execution, test, and workspace actions
 3. `reviewer`: independently reviews only execution evidence and handoff state
 
 Each run writes artifacts into `.runs/<run_id>/` and works inside `.worktrees/<run_id>/`.
@@ -14,7 +14,7 @@ Each run writes artifacts into `.runs/<run_id>/` and works inside `.worktrees/<r
 
 - `src/harness/orchestrator/runner.py`: run lifecycle, checkpointing, pause/resume, review
 - `src/harness/agents/`: provider adapter plus planner/implementer/reviewer roles
-- `src/harness/tools/`: shell, fs, git, tests, web fetch, web search, browser
+- `src/harness/tools/`: shell, fs, git, tests, web fetch, web search, browser, Codex CLI code execution
 - `src/harness/memory/store.py`: per-run artifacts and SQLite run index
 - `src/harness/tasks/`: tracked task lifecycle and repo memory integration
 - `src/harness/codex/bootstrap.py`: local Codex project bootstrap

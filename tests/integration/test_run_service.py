@@ -82,3 +82,38 @@ def test_dashboard_api_lists_runs(tmp_path) -> None:
     response = client.get("/api/runs")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
+
+def test_run_service_supports_explicit_offline_provider_mode(tmp_path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "README.md").write_text("fixture\n")
+    (repo / "harness.toml").write_text("")
+    task_file = repo / "task.yaml"
+    task_file.write_text(
+        yaml.safe_dump(
+            {
+                "goal": "offline fixture run",
+                "acceptance_criteria": ["planner and reviewer artifacts exist"],
+                "constraints": ["stay offline"],
+                "inputs": {
+                    "task_id": "offline-fixture",
+                    "provider_mode": "offline",
+                    "test_command": "python -c \"print('ok')\"",
+                },
+            }
+        )
+    )
+    _git(["init"], repo)
+    _git(["config", "user.email", "test@example.com"], repo)
+    _git(["config", "user.name", "Test User"], repo)
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "init"], repo)
+
+    config = HarnessConfig.load(path=repo / "harness.toml", repo_root=repo)
+    manifest = RunService(config).run(task_file)
+
+    assert manifest.status == "completed"
+    result = RunService(config).store.load_result(manifest.run_id)
+    assert result.phase_states["planner"] == "completed"
+    assert result.phase_states["reviewer"] == "completed"
