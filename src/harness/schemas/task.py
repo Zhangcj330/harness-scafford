@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -19,6 +19,13 @@ class TaskSpec(BaseModel):
         if isinstance(raw, str) and raw.strip():
             return raw.strip()
         return "task"
+
+    @property
+    def provider_mode(self) -> Literal["live", "offline"]:
+        raw = self.inputs.get("provider_mode")
+        if isinstance(raw, str) and raw.strip().lower() == "offline":
+            return "offline"
+        return "live"
 
 
 def load_task(path: Path) -> TaskSpec:

@@ -7,6 +7,7 @@ constraints:
   - Prefer offline-safe behavior.
 inputs:
   task_id: offline-smoke
+  provider_mode: offline
   urls:
     - https://example.com
   browser_urls:

@@ -31,6 +31,8 @@ class ReviewerAgent:
         self.provider = provider
 
     def review(self, task: TaskSpec, packet: dict[str, Any]) -> tuple[str, bool]:
+        if task.provider_mode == "offline":
+            return self._offline_review(task, packet)
         text = self.provider.complete(
             system_prompt=(
                 "You are the reviewer agent in a coding harness. "
@@ -46,3 +48,25 @@ class ReviewerAgent:
         )
         passed = "verdict: fail" not in text.lower()
         return text, passed
+
+    def _offline_review(self, task: TaskSpec, packet: dict[str, Any]) -> tuple[str, bool]:
+        tool_results = packet.get("tool_results", [])
+        failures = [item for item in tool_results if not item.get("ok", False)]
+        missing = []
+        if not packet.get("implementation_summary"):
+            missing.append("implementation summary")
+        body = [
+            "# Reviewer Output",
+            "",
+            f"- Goal: {task.goal}",
+            f"- Acceptance criteria count: {len(task.acceptance_criteria)}",
+            f"- Tool failures: {len(failures)}",
+            f"- Missing signals: {', '.join(missing) if missing else 'none'}",
+        ]
+        if failures:
+            body.append("- Verdict: fail")
+            for item in failures:
+                body.append(f"- Failure: {item.get('tool')}: {item.get('summary')}")
+            return "\n".join(body) + "\n", False
+        body.append("- Verdict: pass")
+        return "\n".join(body) + "\n", True
