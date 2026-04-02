@@ -14,7 +14,7 @@ def _git(command: list[str], cwd: Path) -> None:
     subprocess.run(["git", *command], cwd=cwd, check=True, capture_output=True, text=True)
 
 
-def test_run_service_can_pause_and_resume(tmp_path) -> None:
+def test_run_service_can_pause_and_resume(tmp_path, monkeypatch) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
     (repo / "README.md").write_text("fixture\n")
@@ -46,6 +46,13 @@ max_runtime_seconds = 60
     _git(["config", "user.name", "Test User"], repo)
     _git(["add", "."], repo)
     _git(["commit", "-m", "init"], repo)
+
+    def fake_complete(self, system_prompt: str, user_prompt: str) -> str:
+        if "planning agent" in system_prompt:
+            return "# Planner Output\n\n- ready\n"
+        return "# Reviewer Output\n\nVerdict: pass\n"
+
+    monkeypatch.setattr("harness.agents.provider.OpenAIProvider.complete", fake_complete)
 
     config = HarnessConfig.load(path=repo / "harness.toml", repo_root=repo)
     service = RunService(config)

@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from harness.agents.implementer import ImplementerAgent
 from harness.agents.planner import PlannerAgent
-from harness.agents.provider import OpenAIProvider
+from harness.agents.provider import OpenAIProvider, ProviderUnavailableError
 from harness.agents.reviewer import ReviewerAgent, build_review_packet
 from harness.config import HarnessConfig
 from harness.memory.store import RunStore
@@ -27,7 +27,11 @@ class RunService:
         self.logger = JsonEventLogger()
         self.git = GitTool()
         self.tasks = TaskService(config)
-        provider = OpenAIProvider(config.provider.model)
+        provider = OpenAIProvider(
+            config.provider.model,
+            repo_root=config.repo_root,
+            timeout_seconds=config.provider.timeout_seconds,
+        )
         self.planner = PlannerAgent(provider)
         self.implementer = ImplementerAgent(config)
         self.reviewer = ReviewerAgent(provider)
@@ -59,7 +63,11 @@ class RunService:
         task = load_task(Path(manifest.task_file))
         handoff = self.store.load_handoff(run_id)
         packet = build_review_packet(task, manifest, result, handoff)
-        review_text, passed = self.reviewer.review(task, packet)
+        try:
+            review_text, passed = self.reviewer.review(task, packet)
+        except ProviderUnavailableError as exc:
+            self._fail(manifest, result, str(exc))
+            raise
         review_path = self.store.artifact_path(run_id, "review.md")
         self.store.write_text(review_path, review_text)
         result.review_summary = review_text
@@ -83,27 +91,32 @@ class RunService:
     ) -> None:
         telemetry = Telemetry(self.config, manifest)
         start_index = PHASES.index(start_phase)
-        for phase in PHASES[start_index:]:
-            if manifest.steps_completed >= self.config.budgets.max_steps:
-                self._pause(manifest, result, f"Step budget reached before {phase}")
-                return
-            if phase == "planner":
-                self._run_planner(task, manifest, result, telemetry)
-            elif phase == "implementer":
-                self._run_implementer(task, manifest, result, telemetry)
-            elif phase == "reviewer":
-                self._run_reviewer(task, manifest, result, telemetry)
-            self._checkpoint(manifest, result, f"Completed {phase}")
-        result.telemetry_summary = telemetry.finish()
-        self.store.persist_result(manifest.run_id, result)
-        manifest.status = "completed"
-        manifest.timestamps["completed_at"] = datetime.now(UTC).isoformat()
-        manifest = self.tasks.sync_from_run(
-            manifest,
-            result,
-            self.store.load_handoff(manifest.run_id),
-        )
-        self.store.persist_manifest(manifest)
+        try:
+            for phase in PHASES[start_index:]:
+                if manifest.steps_completed >= self.config.budgets.max_steps:
+                    self._pause(manifest, result, f"Step budget reached before {phase}")
+                    return
+                if phase == "planner":
+                    self._run_planner(task, manifest, result, telemetry)
+                elif phase == "implementer":
+                    self._run_implementer(task, manifest, result, telemetry)
+                elif phase == "reviewer":
+                    self._run_reviewer(task, manifest, result, telemetry)
+                self._checkpoint(manifest, result, f"Completed {phase}")
+            result.telemetry_summary = telemetry.finish()
+            self.store.persist_result(manifest.run_id, result)
+            manifest.status = "completed"
+            manifest.timestamps["completed_at"] = datetime.now(UTC).isoformat()
+            manifest = self.tasks.sync_from_run(
+                manifest,
+                result,
+                self.store.load_handoff(manifest.run_id),
+            )
+            self.store.persist_manifest(manifest)
+        except ProviderUnavailableError as exc:
+            result.telemetry_summary = telemetry.finish()
+            self._fail(manifest, result, str(exc))
+            raise
 
     def _run_planner(
         self,
@@ -253,6 +266,27 @@ class RunService:
         )
         self.store.persist_manifest(manifest)
         self._emit("paused", manifest, reason=reason)
+
+    def _fail(self, manifest: RunManifest, result: RunResult, reason: str) -> None:
+        handoff = Handoff(
+            current_state="Run failed",
+            open_threads=["A language-model provider could not complete the request."],
+            next_steps=["Fix provider access, then start a fresh run or resume if appropriate."],
+            known_risks=[reason],
+        )
+        self.store.persist_handoff(manifest.run_id, handoff)
+        self.store.persist_result(manifest.run_id, result)
+        manifest.status = "failed"
+        manifest.timestamps["failed_at"] = datetime.now(UTC).isoformat()
+        manifest.notes.append(reason)
+        self.store.persist_manifest(manifest)
+        manifest = self.tasks.sync_from_run(
+            manifest,
+            result,
+            self.store.load_handoff(manifest.run_id),
+        )
+        self.store.persist_manifest(manifest)
+        self._emit("failed", manifest, reason=reason)
 
     def _resume_hint(self, manifest: RunManifest) -> str:
         return f"Run `uv run harness resume {manifest.run_id}`"
